@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Manfred Häcker">
+    <meta name="publisher" content="Manfred Häcker">
+    <meta name="description" content="Hupsclick Professioneller Editor Text Drucken">
+    <meta name="copyright" content="Manfred Häcker">
+	<meta name="keywords" content="Hupsclick, Professioneller, Editor, Text, Drucken, Deutsch">
+	<meta property="og:title" content="Hupsclick Professioneller Editor Text Drucken">
+    <meta property="og:description" content="Hupsclick Professioneller Editor Text Drucken">
+    <meta property="og:type" content="website">
+    <link rel="shortcut icon" href="assets/icon.ico" />
+<title>Professioneller Editor</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --toolbar-bg: #1e1e2e;
+    --toolbar-border: #2d2d42;
+    --btn-hover: #2d2d42;
+    --btn-active: #3a3a55;
+    --accent: #6c63ff;
+    --accent-hover: #5a52e0;
+    --text: #1a1a2e;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --editor-bg: #ffffff;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-serif: Georgia, 'Times New Roman', serif;
+    --font-mono: 'Courier New', Courier, monospace;
+    --toolbar-text: #e2e8f0;
+    --toolbar-text-muted: #94a3b8;
+    --status-bg: #f8fafc;
+    --status-border: #e2e8f0;
+	--text-secondary: #666666;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --toolbar-bg: #111120;
+      --toolbar-border: #252538;
+      --btn-hover: #252538;
+      --btn-active: #32324e;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --border: #252538;
+      --editor-bg: #1a1a2e;
+      --shadow: 0 2px 12px rgba(0,0,0,0.3);
+      --status-bg: #111120;
+      --status-border: #252538;
+    }
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Header */
+  .header {
+    background: var(--toolbar-bg);
+    border-bottom: 1px solid var(--toolbar-border);
+    padding: 0 16px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo {
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo svg { width: 16px; height: 16px; fill: white; }
+
+  .app-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--toolbar-text);
+    letter-spacing: -0.2px;
+  }
+
+  .filename-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--toolbar-text-muted);
+    min-width: 140px;
+    max-width: 220px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+
+  .filename-input:hover, .filename-input:focus {
+    background: var(--btn-hover);
+    color: var(--toolbar-text);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .hbtn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid var(--toolbar-border);
+    color: var(--toolbar-text);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+
+  .hbtn:hover { background: var(--btn-hover); border-color: var(--accent); }
+  .hbtn.primary { background: var(--accent); border-color: var(--accent); }
+  .hbtn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .hbtn svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }
+
+  .hbtn-label { display: inline; }
+
+  /* Toolbar */
+  .toolbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 6px 16px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    box-shadow: var(--shadow);
+    z-index: 9;
+  }
+
+  .tb-sep {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+    margin: 0 4px;
+    flex-shrink: 0;
+  }
+
+  .tb-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    padding: 5px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 30px;
+    white-space: nowrap;
+  }
+
+  .tb-btn:hover { background: var(--bg); border-color: var(--border); }
+  .tb-btn.active { background: #ede9fe; border-color: #c4b5fd; color: #5b21b6; }
+
+  @media (prefers-color-scheme: dark) {
+    .tb-btn.active { background: #2d2b55; border-color: #6c63ff; color: #a78bfa; }
+  }
+
+  .tb-btn svg { width: 14px; height: 14px; fill: currentColor; pointer-events: none; }
+
+  .tb-select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    padding: 4px 6px;
+    border-radius: 5px;
+    cursor: pointer;
+    height: 30px;
+    outline: none;
+  }
+
+  .tb-select:hover { border-color: var(--accent); }
+
+  /* Editor area */
+  .editor-container {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 24px 0;
+  }
+
+  .page-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 32px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .page-wrapper::-webkit-scrollbar { width: 6px; }
+  .page-wrapper::-webkit-scrollbar-track { background: transparent; }
+  .page-wrapper::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .editor-page {
+    background: var(--editor-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: var(--shadow);
+    max-width: 860px;
+    margin: 0 auto;
+    min-height: 500px;
+    padding: 48px 64px;
+  }
+
+  #editor {
+    outline: none;
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.75;
+    color: var(--text);
+    min-height: 400px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  #editor:empty::before {
+    content: "Text hier einfügen oder zu tippen beginnen…";
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  #editor h1 { font-size: 2em; font-weight: 700; margin: 0.5em 0 0.4em; line-height: 1.2; }
+  #editor h2 { font-size: 1.5em; font-weight: 600; margin: 0.6em 0 0.3em; line-height: 1.3; }
+  #editor h3 { font-size: 1.25em; font-weight: 600; margin: 0.6em 0 0.3em; }
+  #editor p { margin-bottom: 0.75em; }
+  #editor ul, #editor ol { margin: 0.5em 0 0.75em 1.5em; }
+  #editor li { margin-bottom: 0.25em; }
+  #editor blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 1em 0;
+    padding: 8px 16px;
+    color: var(--text-muted);
+    font-style: italic;
+    background: var(--bg);
+    border-radius: 0 4px 4px 0;
+  }
+  #editor a { color: var(--accent); text-decoration: underline; }
+  #editor table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+  #editor td, #editor th { border: 1px solid var(--border); padding: 8px 12px; }
+  #editor th { background: var(--bg); font-weight: 600; }
+  #editor code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+  #editor hr { border: none; border-top: 2px solid var(--border); margin: 1.5em 0; }
+
+  /* Status bar */
+  .statusbar {
+    background: var(--status-bg);
+    border-top: 1px solid var(--status-border);
+    padding: 5px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .status-left, .status-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .status-item { display: flex; align-items: center; gap: 4px; }
+
+  /* Find & Replace Panel */
+  .find-panel {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .find-panel.visible { display: flex; }
+
+  .find-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    outline: none;
+    width: 180px;
+    height: 30px;
+  }
+
+  .find-input:focus { border-color: var(--accent); }
+
+  .find-info {
+    font-size: 12px;
+    color: var(--text-muted);
+    min-width: 60px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1e1e2e;
+    color: #e2e8f0;
+    font-size: 13px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 100;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Color picker wrapper */
+  .color-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .color-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .color-swatch input[type=color] {
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    border: none;
+  }
+
+  /* Print styles */
+  @media print {
+    body { background: white; overflow: auto; height: auto; }
+    .header, .toolbar, .statusbar, .find-panel, .toast { display: none !important; }
+    .editor-container { padding: 0; overflow: visible; }
+    .page-wrapper { overflow: visible; padding: 0; }
+    .editor-page {
+      max-width: 100%;
+      padding: 0;
+      border: none;
+      box-shadow: none;
+      border-radius: 0;
+      margin: 0;
+    }
+    #editor { font-size: 12pt; }
+  }
+
+      .footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--text-secondary);
+            font-size: 0.6rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+		
+  /* Responsive */
+  @media (max-width: 700px) {
+    .editor-page { padding: 24px 20px; }
+    .editor-container { padding: 12px 8px 0; }
+    .hbtn-label { display: none; }
+    .hbtn { padding: 6px 8px; }
+    .app-title { font-size: 14px; }
+    .filename-input { max-width: 100px; }
+  }
+
+  @media (max-width: 480px) {
+    .header { padding: 0 10px; }
+    .toolbar { padding: 6px 8px; }
+    .tb-sep { display: none; }
+    .statusbar { padding: 5px 10px; font-size: 11px; }
+    .status-right { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo">
+      <svg viewBox="0 0 20 20"><path d="M4 3h12a1 1 0 011 1v1H3V4a1 1 0 011-1zm-1 4h14v10a1 1 0 01-1 1H4a1 1 0 01-1-1V7zm3 3a.5.5 0 000 1h8a.5.5 0 000-1H6zm0 2.5a.5.5 0 000 1h8a.5.5 0 000-1H6zm0 2.5a.5.5 0 000 1h5a.5.5 0 000-1H6z"/></svg>
+    </div>
+    <span class="app-title">Editor</span>
+    <input class="filename-input" id="filename" type="text" value="Unbenanntes Dokument" spellcheck="false" title="Dateiname">
+  </div>
+  <div class="header-actions">
+    <button class="hbtn" onclick="toggleFind()" title="Suchen & Ersetzen (Strg+F)">
+      <svg viewBox="0 0 20 20"><path d="M8 4a4 4 0 100 8A4 4 0 008 4zm-6 4a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"/></svg>
+      <span class="hbtn-label">Suchen</span>
+    </button>
+    <button class="hbtn" onclick="saveFile()" title="Speichern (Strg+S)">
+      <svg viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h9.586a1 1 0 01.707.293l2.414 2.414A1 1 0 0117 6.414V16a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 1v3h8V5H5zm6 9a2 2 0 100-4 2 2 0 000 4z"/></svg>
+      <span class="hbtn-label">Speichern</span>
+    </button>
+    <button class="hbtn primary" onclick="printDoc()" title="Drucken (Strg+P)">
+      <svg viewBox="0 0 20 20"><path d="M5 4v3H4a2 2 0 00-2 2v5a2 2 0 002 2h1v2a1 1 0 001 1h8a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a1 1 0 00-1-1H6a1 1 0 00-1 1zm2 0h6v3H7V4zm-3 7a1 1 0 110-2 1 1 0 010 2zm2 1h8v4H6v-4z"/></svg>
+      <span class="hbtn-label">Drucken</span>
+    </button>
+  </div>
+</header>
+
+<!-- Toolbar -->
+<div class="toolbar" id="toolbar">
+  <!-- Undo / Redo -->
+  <button class="tb-btn" onclick="exec('undo')" title="Rückgängig (Strg+Z)">
+    <svg viewBox="0 0 20 20"><path d="M4 5a1 1 0 000 2h.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3A1 1 0 003.293 3.707L4.586 5H4zm3 7a1 1 0 011-1h6a2 2 0 012 2v1a2 2 0 01-2 2H8a2 2 0 01-2-2v-1a1 1 0 011-1z"/></svg>
+  </button>
+  <button class="tb-btn" onclick="exec('redo')" title="Wiederholen (Strg+Y)">
+    <svg viewBox="0 0 20 20"><path d="M16 5a1 1 0 000 2h-.586l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 111.414 1.414L15.414 5H16zM7 12a1 1 0 00-1 1v1a2 2 0 002 2h6a2 2 0 002-2v-1a2 2 0 00-2-2H8a1 1 0 00-1 1z"/></svg>
+  </button>
+
+  <div class="tb-sep"></div>
+
+  <!-- Font family -->
+  <select class="tb-select" id="fontFamily" onchange="changeFontFamily(this.value)" title="Schriftart">
+    <option value="var(--font-sans)">Sans-Serif</option>
+    <option value="var(--font-serif)">Serif</option>
+    <option value="var(--font-mono)">Monospace</option>
+    <option value="'Arial', sans-serif">Arial</option>
+    <option value="'Verdana', sans-serif">Verdana</option>
+    <option value="'Tahoma', sans-serif">Tahoma</option>
+    <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+    <option value="'Times New Roman', serif">Times New Roman</option>
+    <option value="'Garamond', serif">Garamond</option>
+  </select>
+
+  <!-- Font size -->
+  <select class="tb-select" id="fontSize" onchange="exec('fontSize', this.value)" title="Schriftgröße">
+    <option value="1">8pt</option>
+    <option value="2">10pt</option>
+    <option value="3" selected>12pt</option>
+    <option value="4">14pt</option>
+    <option value="5">18pt</option>
+    <option value="6">24pt</option>
+    <option value="7">36pt</option>
+  </select>
+
+  <div class="tb-sep"></div>
+
+  <!-- Heading -->
+  <select class="tb-select" id="headingSelect" onchange="applyHeading(this.value)" title="Absatzformat">
+    <option value="p">Absatz</option>
+    <option value="h1">Überschrift 1</option>
+    <option value="h2">Überschrift 2</option>
+    <option value="h3">Überschrift 3</option>
+    <option value="pre">Code-Block</option>
+    <option value="blockquote">Zitat</option>
+  </select>
+
+  <div class="tb-sep"></div>
+
+  <!-- Bold, Italic, Underline, Strikethrough -->
+  <button class="tb-btn" id="btn-bold" onclick="exec('bold')" title="Fett (Strg+B)"><svg viewBox="0 0 20 20"><path d="M5 3a1 1 0 000 2h1v10H5a1 1 0 100 2h5.5a4.5 4.5 0 001.87-8.59A4 4 0 009 3H5zm4 2h.5a2 2 0 010 4H10V5zm.5 6H10v4h.5a2.5 2.5 0 000-5z"/></svg></button>
+  <button class="tb-btn" id="btn-italic" onclick="exec('italic')" title="Kursiv (Strg+I)"><svg viewBox="0 0 20 20"><path d="M9 3a1 1 0 000 2h1.55l-2.1 10H7a1 1 0 100 2h6a1 1 0 100-2h-1.55l2.1-10H15a1 1 0 100-2H9z"/></svg></button>
+  <button class="tb-btn" id="btn-underline" onclick="exec('underline')" title="Unterstrichen (Strg+U)"><svg viewBox="0 0 20 20"><path d="M6 3a1 1 0 011 1v5a3 3 0 006 0V4a1 1 0 112 0v5a5 5 0 01-10 0V4a1 1 0 011-1zm-2 13a1 1 0 000 2h12a1 1 0 100-2H4z"/></svg></button>
+  <button class="tb-btn" id="btn-strikeThrough" onclick="exec('strikeThrough')" title="Durchgestrichen"><svg viewBox="0 0 20 20"><path d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm4-5a3 3 0 016 0v1H7V5zm3 10a3 3 0 01-3-3H5a5 5 0 0010 0h-2a3 3 0 01-3 3z"/></svg></button>
+
+  <div class="tb-sep"></div>
+
+  <!-- Alignment -->
+  <button class="tb-btn" id="btn-justifyLeft" onclick="exec('justifyLeft')" title="Linksbündig">
+    <svg viewBox="0 0 20 20"><path d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h8a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h8a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+  </button>
+  <button class="tb-btn" id="btn-justifyCenter" onclick="exec('justifyCenter')" title="Zentriert">
+    <svg viewBox="0 0 20 20"><path d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm2 4a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm-2 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm2 4a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z"/></svg>
+  </button>
+  <button class="tb-btn" id="btn-justifyRight" onclick="exec('justifyRight')" title="Rechtsbündig">
+    <svg viewBox="0 0 20 20"><path d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm4 4a1 1 0 011-1h8a1 1 0 110 2H8a1 1 0 01-1-1zm-4 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm4 4a1 1 0 011-1h8a1 1 0 110 2H8a1 1 0 01-1-1z"/></svg>
+  </button>
+  <button class="tb-btn" id="btn-justifyFull" onclick="exec('justifyFull')" title="Blocksatz">
+    <svg viewBox="0 0 20 20"><path d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+  </button>
+
+  <div class="tb-sep"></div>
+
+  <!-- Lists -->
+  <button class="tb-btn" onclick="exec('insertUnorderedList')" title="Aufzählung">
+    <svg viewBox="0 0 20 20"><path d="M4 5a1 1 0 110-2 1 1 0 010 2zm3-1a1 1 0 011-1h8a1 1 0 110 2H8a1 1 0 01-1-1zm-3 5a1 1 0 110-2 1 1 0 010 2zm3-1a1 1 0 011-1h8a1 1 0 110 2H8a1 1 0 01-1-1zm-3 5a1 1 0 110-2 1 1 0 010 2zm3-1a1 1 0 011-1h8a1 1 0 110 2H8a1 1 0 01-1-1z"/></svg>
+  </button>
+  <button class="tb-btn" onclick="exec('insertOrderedList')" title="Nummerierte Liste">
+    <svg viewBox="0 0 20 20"><path d="M3 4a1 1 0 000 2h.5v2H3a1 1 0 100 2h2a1 1 0 100-2h-.5V4H4a1 1 0 00-1-1zm4 1a1 1 0 011-1h8a1 1 0 110 2H8a1 1 0 01-1-1zm-1 5a1 1 0 011-1h8a1 1 0 110 2H7a1 1 0 01-1-1zm-3 4h2a1 1 0 010 2H4v-1l1.5-1.5H3a1 1 0 010-2h2a1 1 0 010 2H4l-1 1v.5zm4 1a1 1 0 011-1h8a1 1 0 110 2H8a1 1 0 01-1-1z"/></svg>
+  </button>
+
+  <div class="tb-sep"></div>
+
+  <!-- Indent -->
+  <button class="tb-btn" onclick="exec('indent')" title="Einzug vergrößern">
+    <svg viewBox="0 0 20 20"><path d="M3 5a1 1 0 000 2h14a1 1 0 100-2H3zm4 4a1 1 0 000 2h10a1 1 0 100-2H7zm-4 4a1 1 0 000 2h14a1 1 0 100-2H3zm4 4a1 1 0 000 2h10a1 1 0 100-2H7zm-4-9l3 2-3 2V8z"/></svg>
+  </button>
+  <button class="tb-btn" onclick="exec('outdent')" title="Einzug verringern">
+    <svg viewBox="0 0 20 20"><path d="M3 5a1 1 0 000 2h14a1 1 0 100-2H3zm4 4a1 1 0 000 2h10a1 1 0 100-2H7zm-4 4a1 1 0 000 2h14a1 1 0 100-2H3zm4 4a1 1 0 000 2h10a1 1 0 100-2H7zM6 8l-3 2 3 2V8z"/></svg>
+  </button>
+
+  <div class="tb-sep"></div>
+
+  <!-- Link, HR, Clear -->
+  <button class="tb-btn" onclick="insertLink()" title="Link einfügen">
+    <svg viewBox="0 0 20 20"><path d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"/></svg>
+  </button>
+  <button class="tb-btn" onclick="exec('insertHorizontalRule')" title="Trennlinie einfügen">
+    <svg viewBox="0 0 20 20"><path d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm-1-5a1 1 0 000 2h16a1 1 0 100-2H2zm0 10a1 1 0 100 2h16a1 1 0 100-2H2z"/></svg>
+  </button>
+  <button class="tb-btn" onclick="clearFormatting()" title="Formatierung entfernen">
+    <svg viewBox="0 0 20 20"><path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/></svg>
+  </button>
+
+  <div class="tb-sep"></div>
+
+  <!-- Text color & Highlight -->
+  <div class="color-wrap tb-btn" title="Textfarbe" style="padding: 4px;">
+    <svg viewBox="0 0 20 20" style="width:14px;height:14px;fill:var(--text);pointer-events:none;"><path d="M10 2a1 1 0 01.894.553l5 10A1 1 0 0115 14H5a1 1 0 01-.894-1.447l5-10A1 1 0 0110 2zm0 3.618L6.618 12h6.764L10 5.618z"/></svg>
+    <div class="color-swatch" style="margin-left:2px;" id="textColorSwatch">
+      <input type="color" id="textColor" value="#1a1a2e" oninput="applyTextColor(this.value)" title="Textfarbe wählen">
+    </div>
+  </div>
+
+  <div class="color-wrap tb-btn" title="Markierungsfarbe" style="padding: 4px;">
+    <svg viewBox="0 0 20 20" style="width:14px;height:14px;fill:var(--text);pointer-events:none;"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zm-2.207 2.207L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+    <div class="color-swatch" style="margin-left:2px;background:#fef08a;" id="highlightSwatch">
+      <input type="color" id="highlightColor" value="#fef08a" oninput="applyHighlight(this.value)" title="Markierungsfarbe wählen">
+    </div>
+  </div>
+</div>
+
+<!-- Find & Replace Panel -->
+<div class="find-panel" id="findPanel">
+  <span style="font-size:12px;color:var(--text-muted);font-weight:500;white-space:nowrap;">Suchen:</span>
+  <input type="text" class="find-input" id="findInput" placeholder="Suchbegriff…" oninput="doFind()">
+  <span class="find-info" id="findInfo"></span>
+  <button class="tb-btn" onclick="findNav(-1)" title="Vorheriges">&#8593;</button>
+  <button class="tb-btn" onclick="findNav(1)" title="Nächstes">&#8595;</button>
+  <span style="font-size:12px;color:var(--text-muted);font-weight:500;white-space:nowrap;margin-left:8px;">Ersetzen:</span>
+  <input type="text" class="find-input" id="replaceInput" placeholder="Ersetzen durch…">
+  <button class="tb-btn" onclick="replaceOne()" title="Ersetzen" style="font-size:12px;padding:4px 10px;min-width:auto;">Einmal</button>
+  <button class="tb-btn" onclick="replaceAll()" title="Alle ersetzen" style="font-size:12px;padding:4px 10px;min-width:auto;">Alle</button>
+  <button class="tb-btn" onclick="toggleFind()" style="margin-left:auto;" title="Schließen">&#10005;</button>
+</div>
+
+<!-- Editor -->
+<div class="editor-container">
+  <div class="page-wrapper">
+    <div class="editor-page">
+      <div id="editor" contenteditable="true" spellcheck="true"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Status bar -->
+<div class="statusbar">
+  <div class="status-left">
+    <span class="status-item" id="wordCount">0 Wörter</span>
+    <span class="status-item" id="charCount">0 Zeichen</span>
+    <span class="status-item" id="paraCount">0 Absätze</span>
+  </div>
+  <div class="status-right">
+    <span class="status-item" id="lineInfo">Zeile 1</span>
+    <span class="status-item">Professioneller Editor</span>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+    <div class="footer">
+        <p>© 2026 HUPSCLICK</p>
+    </div>
+<script>
+const editor = document.getElementById('editor');
+
+function exec(cmd, val) {
+  editor.focus();
+  document.execCommand(cmd, false, val || null);
+  updateToolbarState();
+}
+
+function changeFontFamily(val) {
+  editor.focus();
+  document.execCommand('fontName', false, val);
+}
+
+function applyHeading(tag) {
+  editor.focus();
+  if (tag === 'p') {
+    document.execCommand('formatBlock', false, 'p');
+  } else if (tag === 'blockquote') {
+    document.execCommand('formatBlock', false, 'blockquote');
+  } else if (tag === 'pre') {
+    document.execCommand('formatBlock', false, 'pre');
+  } else {
+    document.execCommand('formatBlock', false, tag);
+  }
+  document.getElementById('headingSelect').value = 'p';
+}
+
+function applyTextColor(color) {
+  editor.focus();
+  document.execCommand('foreColor', false, color);
+  document.getElementById('textColorSwatch').style.background = color;
+}
+
+function applyHighlight(color) {
+  editor.focus();
+  document.execCommand('hiliteColor', false, color);
+  document.getElementById('highlightSwatch').style.background = color;
+}
+
+function clearFormatting() {
+  exec('removeFormat');
+  exec('formatBlock', 'p');
+}
+
+function insertLink() {
+  const sel = window.getSelection();
+  const text = sel.toString().trim();
+  const url = prompt('URL eingeben:', 'https://');
+  if (url && url !== 'https://') {
+    if (text) {
+      exec('createLink', url);
+    } else {
+      const linkText = prompt('Linktext eingeben:', url);
+      if (linkText) {
+        const link = `<a href="${url}">${linkText}</a>`;
+        exec('insertHTML', link);
+      }
+    }
+  }
+}
+
+// Stats
+function updateStats() {
+  const text = editor.innerText || '';
+  const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
+  const chars = text.length;
+  const paras = editor.querySelectorAll('p,h1,h2,h3,li,blockquote,pre').length || (text.trim() ? 1 : 0);
+  document.getElementById('wordCount').textContent = words + ' Wörter';
+  document.getElementById('charCount').textContent = chars + ' Zeichen';
+  document.getElementById('paraCount').textContent = paras + ' Absätze';
+}
+
+editor.addEventListener('input', updateStats);
+editor.addEventListener('keyup', updateStats);
+
+// Toolbar state
+function updateToolbarState() {
+  ['bold','italic','underline','strikeThrough','justifyLeft','justifyCenter','justifyRight','justifyFull'].forEach(cmd => {
+    const btn = document.getElementById('btn-' + cmd);
+    if (btn) btn.classList.toggle('active', document.queryCommandState(cmd));
+  });
+}
+
+editor.addEventListener('mouseup', updateToolbarState);
+editor.addEventListener('keyup', updateToolbarState);
+document.addEventListener('selectionchange', updateToolbarState);
+
+// Save
+function saveFile() {
+  const name = document.getElementById('filename').value.trim() || 'Dokument';
+  const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>${name}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:860px;margin:40px auto;padding:0 32px;line-height:1.75;color:#1a1a2e;font-size:16px;}h1{font-size:2em;}h2{font-size:1.5em;}h3{font-size:1.25em;}blockquote{border-left:3px solid #6c63ff;margin:1em 0;padding:8px 16px;color:#6b7280;font-style:italic;}</style></head><body>${editor.innerHTML}</body></html>`;
+  const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name + '.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Dokument gespeichert: ' + name + '.html');
+}
+
+// Plain text save
+function saveTxt() {
+  const name = document.getElementById('filename').value.trim() || 'Dokument';
+  const blob = new Blob([editor.innerText], {type: 'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name + '.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Textdatei gespeichert.');
+}
+
+// Print
+function printDoc() {
+  window.print();
+}
+
+// Toast
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// Find & Replace
+let findMatches = [], findIdx = 0;
+
+function toggleFind() {
+  const panel = document.getElementById('findPanel');
+  panel.classList.toggle('visible');
+  if (panel.classList.contains('visible')) {
+    document.getElementById('findInput').focus();
+  } else {
+    clearHighlights();
+  }
+}
+
+function clearHighlights() {
+  const marks = editor.querySelectorAll('mark.find-hl');
+  marks.forEach(m => {
+    const parent = m.parentNode;
+    while (m.firstChild) parent.insertBefore(m.firstChild, m);
+    parent.removeChild(m);
+  });
+  editor.normalize();
+  findMatches = []; findIdx = 0;
+  document.getElementById('findInfo').textContent = '';
+}
+
+function doFind() {
+  clearHighlights();
+  const term = document.getElementById('findInput').value;
+  if (!term) return;
+  const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  let count = 0;
+  nodes.forEach(node => {
+    const text = node.textContent;
+    const re = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi');
+    let m; const frags = [];
+    let last = 0;
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > last) frags.push(document.createTextNode(text.slice(last, m.index)));
+      const mark = document.createElement('mark');
+      mark.className = 'find-hl';
+      mark.style.background = '#fde68a';
+      mark.style.color = '#1a1a2e';
+      mark.textContent = m[0];
+      frags.push(mark);
+      count++;
+      last = m.index + m[0].length;
+    }
+    if (frags.length) {
+      if (last < text.length) frags.push(document.createTextNode(text.slice(last)));
+      const parent = node.parentNode;
+      frags.forEach(f => parent.insertBefore(f, node));
+      parent.removeChild(node);
+    }
+  });
+  findMatches = Array.from(editor.querySelectorAll('mark.find-hl'));
+  document.getElementById('findInfo').textContent = count ? `${count} gefunden` : 'Nicht gefunden';
+  if (findMatches.length) { findIdx = 0; highlightCurrent(); }
+}
+
+function highlightCurrent() {
+  findMatches.forEach((m, i) => {
+    m.style.background = i === findIdx ? '#f59e0b' : '#fde68a';
+  });
+  if (findMatches[findIdx]) findMatches[findIdx].scrollIntoView({block:'nearest'});
+  document.getElementById('findInfo').textContent = `${findIdx+1} / ${findMatches.length}`;
+}
+
+function findNav(dir) {
+  if (!findMatches.length) return;
+  findIdx = (findIdx + dir + findMatches.length) % findMatches.length;
+  highlightCurrent();
+}
+
+function replaceOne() {
+  if (!findMatches.length) return;
+  const rep = document.getElementById('replaceInput').value;
+  const mark = findMatches[findIdx];
+  mark.replaceWith(document.createTextNode(rep));
+  findMatches.splice(findIdx, 1);
+  if (findIdx >= findMatches.length) findIdx = 0;
+  if (findMatches.length) highlightCurrent();
+  else document.getElementById('findInfo').textContent = 'Erledigt';
+  updateStats();
+}
+
+function replaceAll() {
+  const rep = document.getElementById('replaceInput').value;
+  findMatches.forEach(m => m.replaceWith(document.createTextNode(rep)));
+  clearHighlights();
+  showToast('Alle ersetzt.');
+  updateStats();
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveFile(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') { e.preventDefault(); toggleFind(); }
+  if (e.key === 'Escape') {
+    const panel = document.getElementById('findPanel');
+    if (panel.classList.contains('visible')) { toggleFind(); }
+  }
+  if (e.key === 'F3' || (e.ctrlKey && e.key === 'g')) { e.preventDefault(); findNav(e.shiftKey ? -1 : 1); }
+});
+
+// Paste: preserve formatting but strip unsafe tags
+editor.addEventListener('paste', e => {
+  e.preventDefault();
+  const html = e.clipboardData.getData('text/html');
+  const text = e.clipboardData.getData('text/plain');
+  if (html) {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    // Remove scripts and dangerous elements
+    div.querySelectorAll('script,style,iframe,object,embed').forEach(el => el.remove());
+    document.execCommand('insertHTML', false, div.innerHTML);
+  } else if (text) {
+    const lines = text.split(/\r?\n/);
+    const htmlStr = lines.map(l => `<p>${l || '<br>'}</p>`).join('');
+    document.execCommand('insertHTML', false, htmlStr);
+  }
+  updateStats();
+});
+
+// Init
+editor.focus();
+updateStats();
+</script>
+</body>
+</html>
